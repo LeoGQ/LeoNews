@@ -1,0 +1,39 @@
+name: Daily Google News Scraper
+
+on:
+  schedule:
+    # 每天 UTC 时间 23:00 运行 (北京时间早上 7:00)
+    - cron: '0 23 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  scrape-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 feedparser pytz
+        
+    - name: Run Google News scraper
+      run: python scripts/google_news_scraper.py
+      env:
+        NEWS_URL: "https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtVnVHZ0pWVXlnQVAB?ceid=US:en&oc=3"
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add news/
+        git commit -m "📰 Daily news update $(date +'%Y-%m-%d')" || echo "No changes to commit"
+        git push
